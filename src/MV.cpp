@@ -36,27 +36,25 @@ MV::~MV() {
 }
 
 PUBLIC void MV::Init(MVTimeoutCallback_t* tmCb) {
-	MASTER_TYPE_T* ms;
 	this->lampCount = 0;
-	this->masterCount = 1;
+	//this->masterCount = 1;
 	memset((void*) &this->lamp[0].Id, 0xFF, sizeof(LAMP_TYPE_T) * 64);
-	memset((void*) &this->master[0].Id, 0xFF, sizeof(MASTER_TYPE_T) * 8);
-	ms = &this->master[0];
-	ms->Id = 0;
-	ms->Serail[0] = 0x01;
-	ms->Serail[1] = 0x00;
-	ms->Serail[2] = 0x00;
-	ms->Serail[3] = 0x04;
+	this->master.Id = 0;
+	this->master.Serail[0] = 0x01;
+	this->master.Serail[1] = 0x00;
+	this->master.Serail[2] = 0x00;
+	this->master.Serail[3] = 0x04;
 	this->alarm.Count = 0;
 	this->alarm.Enable = FALSE;
 	this->alarm.Interval = 3;
-	this->resent = 0;
+	//this->resent = 0;
 	this->readState = MV_READ_IDLE;
 	this->currentLampRead = 0;
 	this->timeoutCallback = tmCb;
 	this->pendingRegCnf = 1;
 	this->photoOV.Init(LPC_GPIO0, GPIO_PIN_29);
 	this->ciOn.Init(LPC_GPIO0, GPIO_PIN_28);
+	this->uility.Init(LPC_GPIO0, GPIO_PIN_27);
 	this->photoOV.Close();
 	this->ciOn.Close();
 
@@ -83,7 +81,7 @@ PUBLIC Status MV::UpdateDatetime(DateTime_t* dt) {
 	this-> dateTime = *dt;
 	return SUCCESS;
 }
-PUBLIC Status MV::RegisterReq(uint8_t id, uint8_t type, MV_DATA_T* out) {
+/*PUBLIC Status MV::RegisterReq(uint8_t id, uint8_t type, MV_DATA_T* out) {
 	// Fine serial by id
 	Status result;
 	uint8_t loop;
@@ -119,8 +117,8 @@ PUBLIC Status MV::RegisterReq(uint8_t id, uint8_t type, MV_DATA_T* out) {
 		}
 	}
 	return result;
-}
-PUBLIC Status MV::RegisterInd(PRIM_REG_TYPR_T* prim) {
+}*/
+/*PUBLIC Status MV::RegisterInd(PRIM_REG_TYPR_T* prim) {
 	Status result;
 	uint8_t loop;
 	uint8_t nofCount;
@@ -170,14 +168,14 @@ PUBLIC Status MV::RegisterInd(PRIM_REG_TYPR_T* prim) {
 		}
 	}
 	return result;
-}
-PUBLIC Status MV::MakeRegisterIndicator(MV_DATA_T* out) {
+}*/
+/*PUBLIC Status MV::MakeRegisterIndicator(MV_DATA_T* out) {
 	out->Data[0] = this->pendingRegCnf;
 	out->Data[1] = 0;
-	out->Data[2] = this->master[0].Id;
+	out->Data[2] = this->master.Id;
 	out->len = 3;
 	return SUCCESS;
-}
+}*/
 PUBLIC Status MV::ReadReq(PRIM_RD_TYPE_T* prim, MV_DATA_T* out) {
 	uint8_t i;
 	uint8_t pos;
@@ -186,14 +184,7 @@ PUBLIC Status MV::ReadReq(PRIM_RD_TYPE_T* prim, MV_DATA_T* out) {
 	Status result;
 	LAMP_TYPE_T* lamp;
 	result = ERROR;
-	MASTER_TYPE_T* _master;
-	for (loop = 0; loop < 8; loop++) {
-		if (this->master[loop].Id == prim->Id) {
-			_master = &this->master[loop];
-			result = SUCCESS;
-			break;
-		}
-	}
+	//MASTER_TYPE_T* _master;
 	out->Data[0] = prim->Id;
 	out->Data[1] = prim->Type;
 	pos = 2;
@@ -254,21 +245,13 @@ PUBLIC Status MV::ReadReq(PRIM_RD_TYPE_T* prim, MV_DATA_T* out) {
 		}
 		out->len = 10;
 		break;
-	case MS_ENERGY:
-		memcpy(&out->Data[2], _master->Volt, 4);
-		memcpy(&out->Data[6], _master->Current, 4);
-		memcpy(&out->Data[10], _master->Power, 4);
-		memcpy(&out->Data[14], _master->Energy, 4);
-		memcpy(&out->Data[18], _master->PowerFactor, 4);
-		out->len = 22;
-		break;
 	case MS_TIME:
-		out->Data[2] = _master->DateTime.Time.Sec;
-		out->Data[3] = _master->DateTime.Time.Min;
-		out->Data[4] = _master->DateTime.Time.Hour;
-		out->Data[5] = _master->DateTime.Date.Day;
-		out->Data[6] = _master->DateTime.Date.Month;
-		out->Data[7] = _master->DateTime.Date.Year;
+		out->Data[2] = this->master.DateTime.Time.Sec;
+		out->Data[3] = this->master.DateTime.Time.Min;
+		out->Data[4] = this->master.DateTime.Time.Hour;
+		out->Data[5] = this->master.DateTime.Date.Day;
+		out->Data[6] = this->master.DateTime.Date.Month;
+		out->Data[7] = this->master.DateTime.Date.Year;
 		out->len = sizeof(DateTime_t) + 2;
 		break;
 	case MS_RELAY :
@@ -287,8 +270,12 @@ PUBLIC Status MV::ReadReq(PRIM_RD_TYPE_T* prim, MV_DATA_T* out) {
 		}
 		out->len = 4;
 		break;
+	case MS_TEMP :
+		out->Data[2] = this->master.Temperature;
+		out->len = 3;
+		break;
 	case MS_SERAIL:
-		memcpy(&out->Data[2], _master->Serail, 4);
+		memcpy(&out->Data[2], this->master.Serail, 4);
 		out->len = 6;
 		break;
 	case MS_NOL:
@@ -300,9 +287,10 @@ PUBLIC Status MV::ReadReq(PRIM_RD_TYPE_T* prim, MV_DATA_T* out) {
 		if (lampSearch(lampId, &lamp)) {
 			out->Data[2] = (uint8_t)lamp->Id;
 			out->Data[3] = (uint8_t)lamp->Lux;
-			memcpy(&out->Data[4], lamp->Serial, 12);
+			out->Data[4] = lamp->LQI;
+			memcpy(&out->Data[5], lamp->Serial, 12);
 			//out->Data[3] = (uint8_t)lamp->Lux;
-			out->len = 14 + 2;
+			out->len = 15 + 2;
 		} else {
 			out->Data[2] = 0xFF;
 			out->len = 3;
@@ -339,6 +327,9 @@ PUBLIC Status MV::ReadRsp(PRIM_RD_RSP_TYPE_T* prim) {
 	case LAMP_SENSOR:
 		lamp->Lux = prim->Data;
 		break;
+	case LAMP_LQI:
+		lamp->LQI = prim->Data;
+		break;
 	case LAMP_ATTR_PENDING :
 		if (prim->Data != 0xFF) {
 			// getting Data
@@ -359,9 +350,7 @@ PUBLIC Status MV::ReadRsp(PRIM_RD_RSP_TYPE_T* prim) {
 
 		}
 		break;
-	//case LAMP_LOC:
-		//memcpy((uint8_t*) lamp->Loc.Lat, data, 8);
-	//	break;
+
 	}
 	// Reset State
 	AlarmDisable();
@@ -377,51 +366,54 @@ PUBLIC Status MV::WriteReq(PRIM_WR_TYPE_T* prim) {
 	if (prim->Id == 0) {
 		time = (Time_t*) &prim->Data;
 		date = (Date_t*) &time->reserve;
-		this->master[0].DateTime.Date = *date;
-		this->master[0].DateTime.Time = *time;
+		this->master.DateTime.Date = *date;
+		this->master.DateTime.Time = *time;
 	}
 	return SUCCESS;
 }
 PUBLIC Status MV::ActionReq(PRIM_ACT_TYPE_T* prim, MV_DATA_T* out) {
 	Status result;
-	MASTER_TYPE_T* _master;
 	uint8_t* relayOut;
 	result = ERROR;
-	result = masterSearch(prim->Id, &_master);
 	out->len = 0;
-	if (result == SUCCESS) {
-		switch (prim->Type) {
-		case MS_ACT_CI_CON:
-			if (prim->Data == 1) {
-				// NO Close
-				photoOV.Close();
-				// NC Open
-				ciOn.Open();
-			} else {
-				// NO Open
-				photoOV.Open();
-				// NC close
-				ciOn.Close();
-			}
-			break;
-		case MS_ACT_R_CON:
-			relayOut = &prim->Data;
-			if (relayOut[0] == 0) {
-				photoOV.Close();
-			} else {
-				photoOV.Open();
-			}
-			if (relayOut[1] == 0) {
-				ciOn.Close();
-			} else {
-				ciOn.Open();
-			}
-			break;
-		default:
-			result = ERROR;
-			break;
+	switch (prim->Type) {
+	case MS_ACT_CI_CON:
+		if (prim->Data == 1) {
+			// NO Close
+			photoOV.Close();
+			// NC Open
+			ciOn.Open();
+		} else {
+			// NO Open
+			photoOV.Open();
+			// NC close
+			ciOn.Close();
 		}
+		break;
+	case MS_ACT_R_CON:
+		relayOut = &prim->Data;
+		if (relayOut[0] == 0) {
+			photoOV.Close();
+		} else {
+			photoOV.Open();
+		}
+		if (relayOut[1] == 0) {
+			ciOn.Close();
+		} else {
+			ciOn.Open();
+		}
+		break;
+	case MV_ACT_LIGHT_CONTROL :
+		out->Data[0] = prim->Id;
+		out->Data[1] = prim->Type;
+		out->Data[2] = prim->Data;
+		out->len = 3;
+		break;
+	default:
+		result = ERROR;
+		break;
 	}
+
 	return result;
 }
 /*PUBLIC Status MV::RequestToReadLamp(uint8_t id, LAMP_READ_TYPE_T type,
@@ -450,11 +442,10 @@ PUBLIC Status MV::RequestToGetNewDevice(MV_DATA_T* out) {
 	out->Data[0] = 0;
 	out->Data[1] = LAMP_ATTR_PENDING;
 	out->len = 2;
+	return SUCCESS;
 }
 
-
-
-PUBLIC Status MV::RequestResent(MV_DATA_T* out) {
+/*PUBLIC Status MV::RequestResent(MV_DATA_T* out) {
 	Status result;
 	result = ERROR;
 	if (++this->resent <= 3) {
@@ -464,7 +455,7 @@ PUBLIC Status MV::RequestResent(MV_DATA_T* out) {
 		result = SUCCESS;
 	}
 	return result;
-}
+}*/
 PUBLIC void MV::AlarmTick(void) {
 	//FIFO_ATTR_T* fifo;
 	if (this->alarm.Enable) {
@@ -480,14 +471,6 @@ PUBLIC void MV::AlarmTick(void) {
 			this->alarm.Enable = FALSE;
 		}
 	}
-	/*if (ciOn.GetState()) {
-		ciOn.Close();
-		photoOV.Close();
-	}
-	else {
-		ciOn.Open();
-		photoOV.Open();
-	}*/
 }
 PUBLIC void MV::AlarmRefesh(void) {
 	this->alarm.Count = 0;
@@ -576,6 +559,9 @@ PUBLIC Status MV::ReadNextLight(MV_DATA_T *out) {
 	currentPos = this->currentLampRead;
 	getDev = FALSE;
 	setPoint = 0;
+	if (currentPos == 0) {
+		currentPos = 63;
+	}
 	while (!getDev) {
 		if (++currentPos > MAX_LAMP) {
 			currentPos = 0;
@@ -615,20 +601,6 @@ PRIVATE Status MV::lampSearch(uint8_t id, LAMP_TYPE_T** ppLamp) {
 	for (i = 0; i < 64; i++) {
 		if (this->lamp[i].Id == id) {
 			*ppLamp = &this->lamp[i];
-			st = SUCCESS;
-			break;
-		}
-	}
-	return st;
-}
-PRIVATE Status MV::masterSearch(uint8_t id, MASTER_TYPE_T** ppMaster) {
-	Status st;
-	uint8_t i;
-	st = ERROR;
-	// Find lamp id
-	for (i = 0; i < 8; i++) {
-		if (this->master[i].Id == id) {
-			*ppMaster = &this->master[i];
 			st = SUCCESS;
 			break;
 		}

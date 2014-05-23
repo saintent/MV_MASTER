@@ -112,7 +112,14 @@ PUBLIC void IAAP::Interactive(void) {
 	FIFO_ATTR_T* fifo;
 	// Check State
 	// Start Alarm
-	AlarmEnable();
+	if (this->alarm.Enable != TRUE) {
+		AlarmEnable();
+	}
+	else {
+		AlarmRefesh();
+	}
+
+
 	// Get FIFO
 	fifo = &this->phyObj.RxFifo;
 

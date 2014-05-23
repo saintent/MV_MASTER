@@ -21,8 +21,8 @@
 #include "pvsensor.h"
 #include "IAAP.h"
 #include "MV.h"
-#include "MVKB.h"
-#include "ZBSTREAM.h"
+//#include "MVKB.h"
+//#include "ZBSTREAM.h"
 
 struct {
 	uint8_t Tick10ms;
@@ -52,7 +52,7 @@ MV 		pMV;
 // TODO: insert other include files here
 
 // TODO: insert other definitions and declarations here
-void IAPRegisterRequestCallback(void* obj, uint8_t addr, uint8_t id) {
+/*void IAPRegisterRequestCallback(void* obj, uint8_t addr, uint8_t id) {
 	uint8_t dOut[64];
 	uint8_t type;
 	IAAP* iaap;
@@ -73,8 +73,8 @@ void IAPRegisterRequestCallback(void* obj, uint8_t addr, uint8_t id) {
 	}
 	pMV.RegisterReq(id, type, &mvData);
 	iaap->RequestToSend(PRIM_REGISTER_RSP, addr, mvData.Data, (uint8_t) mvData.len);
-}
-void IAPRegisterIndicatorCallback(void* obj, uint8_t addr, PRIM_REG_TYPR_T* prim) {
+}*/
+/*void IAPRegisterIndicatorCallback(void* obj, uint8_t addr, PRIM_REG_TYPR_T* prim) {
 	uint8_t dOut[64];
 	//uint8_t type;
 	IAAP* iaap;
@@ -90,7 +90,7 @@ void IAPRegisterIndicatorCallback(void* obj, uint8_t addr, PRIM_REG_TYPR_T* prim
 		//pMV.AlarmEnable();
 		//iaap->RequestToSend(PRIM_READ_REQ, addr, mvData.Data, (uint8_t) mvData.len);
 	}
-}
+}*/
 void IAPReadRequestCallback(void* obj, uint8_t addr, PRIM_RD_TYPE_T* prim) {
 	uint8_t dOut[64];
 	//uint8_t type;
@@ -137,9 +137,17 @@ void IAPActionRequestCallBack(void* obj, uint8_t addr, PRIM_ACT_TYPE_T* prim) {
 	} else {
 		type = 1;
 	}
+
 	pMV.ActionReq(prim, &mvData);
-	iaap->RequestToSend(PRIM_ACTION_CNF, addr, mvData.Data,
-			(uint8_t) mvData.len);
+	if (type == 0) {
+		iaap->RequestToSend(PRIM_ACTION_CNF, addr, mvData.Data,
+					(uint8_t) mvData.len);
+	}
+	else {
+		pZigbeePort.RequestToSend(PRIM_ACTION_REQ, 1, mvData.Data,
+				(uint8_t) mvData.len);
+	}
+
 
 }
 void MvAlarmCallback(void) {
@@ -147,7 +155,8 @@ void MvAlarmCallback(void) {
 	Status result;
 	MV_DATA_T data;
 	data.Data = dOut;
-	result = pMV.RequestResent(&data);
+	result = ERROR;
+	//result = pMV.RequestResent(&data);
 	if (result == SUCCESS) {
 #ifdef USE_ZB
 		pZigbeePort.RequestToSend(PRIM_READ_REQ, 0x01, data.Data, data.len);
@@ -188,11 +197,6 @@ void UartSendChcmpCallback(Uart_type t) {
 	}
 #endif
 }
-void ZigBeeDataStreamCallBack(void* obj) {
-	ZBStram_DataStruct_t * data;
-	data = (ZBStram_DataStruct_t*) obj;
-	//pMV.UpdateData(data);
-}
 
 void CoreInit(void) {
 	//LPC_SYSCON->SYSOSCCTRL = 0x01;
@@ -220,7 +224,7 @@ void ObjectInit(void) {
 	Relay CiCon(LPC_GPIO0, GPIO_PIN_28);
 	Relay Lamp(LPC_GPIO0, GPIO_PIN_27);*/
 
-	dIAPCb.RegReq = IAPRegisterRequestCallback;
+	//dIAPCb.RegReq = IAPRegisterRequestCallback;
 	//dIAPCb.RegInd = IAPRegisterIndicatorCallback;
 	dIAPCb.ReadReq = IAPReadRequestCallback;
 	dIAPCb.ReadRsp = 0;
@@ -239,7 +243,7 @@ void ObjectInit(void) {
 
 #ifdef USE_ZB
 	zIAPCb.RegReq = 0;
-	zIAPCb.RegInd = IAPRegisterIndicatorCallback;
+	//zIAPCb.RegInd = IAPRegisterIndicatorCallback;
 	zIAPCb.ReadReq = 0;
 	zIAPCb.ReadRsp = IAPReadResponseCallback;
 	zIAPCb.WrReq = 0;
@@ -312,8 +316,6 @@ int main(void) {
 				pZigbeePort.RequestToSend(PRIM_READ_REQ, 0x01, data.Data, data.len);
 #endif
 			}
-
-
 			/*result = ERROR;
 			// master pending register check
 			result = pMV.MsRegisterPending() ;
@@ -331,20 +333,7 @@ int main(void) {
 			DateTime_t dt;
 			ckObject.GetClock(&dt);
 			pMV.UpdateDatetime(&dt);
-			result = ERROR;
-			// master pending register check
-#warning "Comment register pending"
-			//result = pMV.MsRegisterPending();
-			if (result == SUCCESS) {
-				pMV.MakeRegisterIndicator(&data);
-				pDcuPort.RequestToSend(PRIM_REGISTER_IND, 0x00, data.Data,
-						data.len);
-				GPIO_SetHigh(LPC_GPIO0, GPIO_PIN_10);
-			}
 			pMV.AlarmTick();
-
-
-
 			ObjectTick.secTick = FALSE;
 		}
 
