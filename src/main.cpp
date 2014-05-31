@@ -23,8 +23,8 @@
 #include "MV.h"
 #include "TempSensor.h"
 #include "TTable.h"
-//#include "MVKB.h"
-//#include "ZBSTREAM.h"
+#include "MVKB.h"
+#include "ZBSTREAM.h"
 
 struct {
 	uint8_t Tick10ms;
@@ -47,52 +47,14 @@ ObjectTick_t ObjectTick;
 TempSensor 		pTempSensor;
 //Clock 	ckObject;
 IAAP	pDcuPort;
-IAAP 	pZigbeePort;
-//ZBSTREAM pZigbeePort;
-MV 		pMV;
-//MVKB		pMV;
+//IAAP 	pZigbeePort;
+ZBSTREAM pZigbeePort;
+//MV 		pMV;
+MVKB		pMV;
 // TODO: insert other include files here
 
 // TODO: insert other definitions and declarations here
-/*void IAPRegisterRequestCallback(void* obj, uint8_t addr, uint8_t id) {
-	uint8_t dOut[64];
-	uint8_t type;
-	IAAP* iaap;
-	MV_DATA_T mvData;
-	mvData.Data = dOut;
-	iaap = (IAAP*) obj;
-	// Master
-#ifndef USE_ZB
-	if (iaap->GetPort() == UART1) {
-#else
-	if (iaap->GetPort() == UART0) {
-#endif
-		type = 0;
-	}
-	// Zigbee
-	else {
-		type = 1;
-	}
-	pMV.RegisterReq(id, type, &mvData);
-	iaap->RequestToSend(PRIM_REGISTER_RSP, addr, mvData.Data, (uint8_t) mvData.len);
-}*/
-/*void IAPRegisterIndicatorCallback(void* obj, uint8_t addr, PRIM_REG_TYPR_T* prim) {
-	uint8_t dOut[64];
-	//uint8_t type;
-	IAAP* iaap;
-	MV_DATA_T mvData;
-	mvData.Data = dOut;
-	iaap = (IAAP*) obj;
-	// Master
-	if (iaap->GetPort() == UART1) {
-		//type = 0;
-		pMV.RegisterInd(prim);
-		// Request Read
-		//pMV.RequestToReadLamp(prim->Entry, LAMP_SERIAL, &mvData);
-		//pMV.AlarmEnable();
-		//iaap->RequestToSend(PRIM_READ_REQ, addr, mvData.Data, (uint8_t) mvData.len);
-	}
-}*/
+
 void IAPReadRequestCallback(void* obj, uint8_t addr, PRIM_RD_TYPE_T* prim) {
 	uint8_t dOut[64];
 	//uint8_t type;
@@ -145,10 +107,10 @@ void IAPActionRequestCallBack(void* obj, uint8_t addr, PRIM_ACT_TYPE_T* prim) {
 		iaap->RequestToSend(PRIM_ACTION_CNF, addr, mvData.Data,
 					(uint8_t) mvData.len);
 	}
-	else {
+	/*else {
 		pZigbeePort.RequestToSend(PRIM_ACTION_REQ, 1, mvData.Data,
 				(uint8_t) mvData.len);
-	}
+	}*/
 
 
 }
@@ -161,7 +123,7 @@ void MvAlarmCallback(void) {
 	//result = pMV.RequestResent(&data);
 	if (result == SUCCESS) {
 #ifdef USE_ZB
-		pZigbeePort.RequestToSend(PRIM_READ_REQ, 0x01, data.Data, data.len);
+		//pZigbeePort.RequestToSend(PRIM_READ_REQ, 0x01, data.Data, data.len);
 #endif
 		pMV.AlarmRefesh();
 	}
@@ -198,6 +160,12 @@ void UartSendChcmpCallback(Uart_type t) {
 		pZigbeePort.PhySentCallback(t);
 	}
 #endif
+}
+
+void ZigBeeDataStreamCallBack(void* obj) {
+	ZBStram_DataStruct_t * data;
+	data = (ZBStram_DataStruct_t*) obj;
+	pMV.UpdateData(data);
 }
 
 void CoreInit(void) {
@@ -255,13 +223,13 @@ void ObjectInit(void) {
 	zPort.Speed = 38400;
 	zPort.Loc = UART_LOC_0;
 
-	pZigbeePort.Init(0x00, &zPort, &zIAPCb);
-	//pZigbeePort.Init(&zPort, ZigBeeDataStreamCallBack);
+	//pZigbeePort.Init(0x00, &zPort, &zIAPCb);
+	pZigbeePort.Init(&zPort, ZigBeeDataStreamCallBack);
 #endif
 
 
-	pMV.Init(MvAlarmCallback);
-	//pMV.Init(60);
+	//pMV.Init(MvAlarmCallback);
+	pMV.Init(60);
 	// Init uart for DCU
 	UARTInit(dPort.Port, dPort.Speed, (uint8_t) dPort.Loc);
 	UART_RS485Init();
@@ -300,7 +268,7 @@ int main(void) {
 			// 1 ms routine
 			pDcuPort.AlarmTick();
 #ifdef USE_ZB
-			pZigbeePort.AlarmTick();
+			//pZigbeePort.AlarmTick();
 #endif
 			ObjectTick.ms1Tick = FALSE;
 		}
@@ -315,7 +283,7 @@ int main(void) {
 
 			// 100 ms routine
 			// Collect Data from lamp
-			result = pMV.CollectData(&data);
+			/*result = pMV.CollectData(&data);
 			if (result == SUCCESS) {
 #ifdef USE_ZB
 				pZigbeePort.RequestToSend(PRIM_READ_REQ, 0x01, data.Data, data.len);
@@ -347,13 +315,13 @@ int main(void) {
 
 		if (ObjectTick.sec5Tick) {
 			// check for new device
-			pMV.StartCollectNewDevice();
+			//pMV.StartCollectNewDevice();
 			ObjectTick.sec5Tick = FALSE;
 		}
 
 		if (ObjectTick.sec10Tick) {
 			// collect data from coord
-			pMV.StartCollectLightSensor();
+			//pMV.StartCollectLightSensor();
 			ObjectTick.sec10Tick = FALSE;
 		}
 
