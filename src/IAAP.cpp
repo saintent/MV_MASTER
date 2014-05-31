@@ -54,28 +54,39 @@ PUBLIC void IAAP::Init(uint8_t addr, COM_PORT_T* port,IAP_INIT_CB_T* CbFn) {
 	this->iap_WrRegCb = CbFn->WrReq;
 	this->iap_ActReqCb = CbFn->ActReq;
 	this->frmState = FRM_START;
-	this->alarm.Interval = 100;
+	this->alarm.Interval = 20;
 	this->alarm.Count = 0;
 	this->alarm.Enable = FALSE;
+	this->frmTimeout.Interval = 100;
+	this->frmTimeout.Enable = FALSE;
+	this->frmTimeout.Count = 0;
 
-	FIFO_Init(rxFIFO, rxBuff, 64);
+	FIFO_Init(rxFIFO, rxBuff, 32);
 	FIFO_Init(txFIFO, txBuff, 32);
 
 }
 PUBLIC void IAAP::AlarmTick(void) {
 	FIFO_ATTR_T* fifo;
-	if (this->alarm.Enable) {
+	if (this->alarm.Enable == TRUE) {
 		// Check Time out
 		if (++this->alarm.Count >= this->alarm.Interval) {
 			// Process
 			// Discard frame, reset state
 			fifo = &this->phyObj.RxFifo;
 			// Clear all data in fifo
-			FIFO_Flush(fifo);
+			//FIFO_Flush(fifo);
 			this->frmState = FRM_START;
 			this->frmLength = 0;
 			this->alarm.Count = 0;
 			this->alarm.Enable = FALSE;
+		}
+	}
+	if (this->frmTimeout.Enable == TRUE) {
+		if (++ this->frmTimeout.Count >= this->frmTimeout.Interval) {
+			this->frmState = FRM_START;
+			this->frmLength = 0;
+			this->frmTimeout.Count = 0;
+			this->frmTimeout.Enable = FALSE;
 		}
 	}
 }
@@ -131,6 +142,8 @@ PUBLIC void IAAP::Interactive(void) {
 		this->frmState = FRM_START;
 		this->frmLength = 0;
 		AlarmDisable();
+		// Disable frame time out
+		this->frmTimeout.Enable = FALSE;
 	}
 }
 PUBLIC void IAAP::PhyCallback(Uart_type t, uint8_t data) {
@@ -292,6 +305,9 @@ PRIVATE void IAAP::readFrame(FIFO_ATTR_T* pFIFO, uint8_t* pDecodeData,
 				//pDecodeData[pDecodeDataSize[0]] = u8Data;
 				//pDecodeDataSize[0]++;
 				this->frmState = FRM_READ;
+				// Start frame imcomming timeout
+				this->frmTimeout.Enable = TRUE;
+				this->frmTimeout.Count = 0;
 			}
 			break;
 		}
@@ -461,6 +477,7 @@ PRIVATE void IAAP::sentFrame(uint8_t dest, uint8_t cmd, uint8_t* rspFrm, uint8_t
 	uint8_t len;
 	uint8_t pos;
 	uint16_t fcs;
+	uint8_t data;
 	FIFO_ATTR_T* pfifo;
 	pos = 0;
 	len = 0;
@@ -495,6 +512,7 @@ PRIVATE void IAAP::sentFrame(uint8_t dest, uint8_t cmd, uint8_t* rspFrm, uint8_t
 		pos++;
 		len--;
 	}
+
 	UART_StartSent(phyObj.Port.Port);
 	PhySentCallback(phyObj.Port.Port);
 }

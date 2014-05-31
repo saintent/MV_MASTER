@@ -1,15 +1,14 @@
-//================ File Despciption =========================================//
-//=== File name : PVSensor.h
+//================ File Description =========================================//
+//=== File name : TTable.h
 //===========================================================================//
 
-#ifndef PVSENSOR_H_
-#define PVSENSOR_H_
+
+#ifndef TTABLE_H_
+#define TTABLE_H_
+
 
 //================ Include Header ===========================================//
-#include "lpc12xx.h"
-#include "lpc12xx_adc.h"
-#include "lpc12xx_iocon.h"
-#include "TempSensor.h"
+//
 //================ PULBIC DEFINE ============================================//
 //
 //================ PUBLIC MACRO =============================================//
@@ -17,24 +16,15 @@
 //================ TYPEDEF DATA TYPE DEFINITION =============================//
 //
 //================ ENUMERATOR DEFINITION ====================================//
-/*typedef enum {
-	ADC_FREE = 0,
-	ADC_ONREAD
-}Adc_Status;*/
-
-typedef enum {
-	SENSOR_CH1 = 0,
-	SENSOR_CH2,
-	SENSOR_CH3,
-	SENSOR_MAX
-}SensorChannal_Typdef;
+//
 //================ TYPEDEF FUNCTION TYPE DEFFINITION ========================//
 //
 //================ TYPEDEF STRUCT/UNION =====================================//
 //
 //================ EXTERN FUNCTION ==========================================//
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 #ifdef __cplusplus
@@ -43,23 +33,21 @@ extern "C" {
 //================ EXTERN FUNCTION POINTER ==================================//
 //
 //================ EXTERN VARIABLE ==========================================//
-//
+static uint16_t tTable[101] = {
+		108,113,119,124,130,136,142,149,155,162,
+		169,176,183,191,198,206,214,222,230,239,
+		247,256,265,274,283,293,302,311,321,331,
+		341,350,360,370,380,391,401,411,421,431,
+		441,452,462,472,482,492,502,512,522,532,
+		542,551,561,570,580,589,598,607,616,625,
+		634,642,651,659,667,675,683,691,699,706,
+		714,721,728,735,742,748,755,761,768,774,
+		780,786,791,797,802,808,813,818,823,828,
+		833,837,842,846,851,855,859,863,867,871,
+		874,
+
+};
 //================ EXTERN QUEUE =============================================//
 //
-//================ CLASS DECLARATION ========================================//
-
-class PVSensor {
-public:
-	PVSensor();
-	virtual ~PVSensor();
-	static void ReadCallback(PVSensor* obj, SensorChannal_Typdef ch);
-	void Init();
-	Adc_Status Read();
-	uint16_t GetValue(SensorChannal_Typdef ch);
-private :
-	Adc_Status onRead;
-	uint16_t Value[SENSOR_MAX];
-};
-
 //================ END OF FILE ==============================================//
-#endif /* PVSENSOR_H_ */
+#endif /* TTABLE_H_ */

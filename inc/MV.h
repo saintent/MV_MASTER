@@ -155,6 +155,7 @@ public:
 	Status RequestToGetNewDevice(MV_DATA_T* out);
 	Status StartCollectNewDevice(void);
 	Status StartCollectLightSensor(void);
+	Status UpdateTemp(uint8_t temp);
 
 
 private:

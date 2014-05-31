@@ -1,33 +1,29 @@
-//================ File Despciption =========================================//
-//=== File name : PVSensor.h
+//================ File Description =========================================//
+//=== File name : TempSensor.h
 //===========================================================================//
 
-#ifndef PVSENSOR_H_
-#define PVSENSOR_H_
+#ifndef TEMPSENSOR_H_
+#define TEMPSENSOR_H_
 
 //================ Include Header ===========================================//
 #include "lpc12xx.h"
 #include "lpc12xx_adc.h"
 #include "lpc12xx_iocon.h"
-#include "TempSensor.h"
 //================ PULBIC DEFINE ============================================//
-//
+#define ADC_ADINT		0x00010000
 //================ PUBLIC MACRO =============================================//
 //
 //================ TYPEDEF DATA TYPE DEFINITION =============================//
 //
 //================ ENUMERATOR DEFINITION ====================================//
-/*typedef enum {
+typedef enum {
 	ADC_FREE = 0,
 	ADC_ONREAD
-}Adc_Status;*/
+}Adc_Status;
 
 typedef enum {
-	SENSOR_CH1 = 0,
-	SENSOR_CH2,
-	SENSOR_CH3,
-	SENSOR_MAX
-}SensorChannal_Typdef;
+	TEMP_ATTR_TEMP = 0,
+}TEMP_ATTR_TYPE_T;
 //================ TYPEDEF FUNCTION TYPE DEFFINITION ========================//
 //
 //================ TYPEDEF STRUCT/UNION =====================================//
@@ -48,18 +44,25 @@ extern "C" {
 //
 //================ CLASS DECLARATION ========================================//
 
-class PVSensor {
+class TempSensor {
 public:
-	PVSensor();
-	virtual ~PVSensor();
-	static void ReadCallback(PVSensor* obj, SensorChannal_Typdef ch);
-	void Init();
+	TempSensor();
+	virtual ~TempSensor();
+	static void ReadCallback(TempSensor* obj, uint16_t val);
+	void Init(uint16_t* ptTable, uint8_t tTableSize);
 	Adc_Status Read();
-	uint16_t GetValue(SensorChannal_Typdef ch);
+	uint16_t GetValue(void);
+	uint8_t GetTemp(void);
 private :
+	void calTemp(void);
+private :
+	uint16_t* tempTable;
+	uint8_t	 taempTableSize;
 	Adc_Status onRead;
-	uint16_t Value[SENSOR_MAX];
+	uint16_t value;
+	uint8_t	tempValue;
+
 };
 
 //================ END OF FILE ==============================================//
-#endif /* PVSENSOR_H_ */
+#endif /* TEMPSENSOR_H_ */

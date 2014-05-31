@@ -50,6 +50,7 @@ extern "C" {
 #if defined (__USE_CMSIS)
 #include "LPC12xx.h"
 #endif
+#include "lpc_uart.h"
 
 // Patch the AEABI integer divide functions to use MCU's romdivide library
 #ifdef __USE_ROMDIVIDE
@@ -103,14 +104,14 @@ void SSP_IRQHandler (void) ALIAS(IntDefaultHandler);
 void UART0_IRQHandler (void) ALIAS(IntDefaultHandler);
 void UART1_IRQHandler (void) ALIAS(IntDefaultHandler);
 void COMP_IRQHandler (void) ALIAS(IntDefaultHandler);
-void ADC_IRQHandler (void) ALIAS(IntDefaultHandler);
+//void ADC_IRQHandler (void) ALIAS(IntDefaultHandler);
 void WDT_IRQHandler (void) ALIAS(IntDefaultHandler);
 void BOD_IRQHandler (void) ALIAS(IntDefaultHandler);
 void PIOINT0_IRQHandler (void) ALIAS(IntDefaultHandler);
 void PIOINT1_IRQHandler (void) ALIAS(IntDefaultHandler);
 void PIOINT2_IRQHandler (void) ALIAS(IntDefaultHandler);
 void DMA_IRQHandler (void) ALIAS(IntDefaultHandler);
-//void RTC_IRQHandler (void) ALIAS(IntDefaultHandler);
+void RTC_IRQHandler (void) ALIAS(IntDefaultHandler);
 
 //*****************************************************************************
 //
@@ -145,7 +146,11 @@ extern void _vStackTop(void);
 // ensure that it ends up at physical address 0x0000.0000.
 //
 //*****************************************************************************
-extern void RTC_IRQHandler(void);
+//extern void RTC_IRQHandler(void);
+extern void ADC_IRQHandler (void);
+//extern void UART0_IRQHandler (void);
+//extern void UART1_IRQHandler (void);
+
 extern void (* const g_pfnVectors[])(void);
 __attribute__ ((section(".isr_vector")))
 void (* const g_pfnVectors[])(void) = {
@@ -390,11 +395,10 @@ void NMI_Handler(void)
 __attribute__ ((section(".after_vectors")))
 void HardFault_Handler(void)
 {
-	ResetISR();
 	//main();
-    /*while(1)
+    while(1)
     {
-    }*/
+    }
 }
 __attribute__ ((section(".after_vectors")))
 void SVC_Handler(void)

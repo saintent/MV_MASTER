@@ -16,11 +16,13 @@
 #include "lpc12xx_sysctrl.h"
 #include "lpc_gpio.h"
 #include "lpc_uart.h"
-#include "clock.h"
+//#include "clock.h"
 #include "relay.h"
 #include "pvsensor.h"
 #include "IAAP.h"
 #include "MV.h"
+#include "TempSensor.h"
+#include "TTable.h"
 //#include "MVKB.h"
 //#include "ZBSTREAM.h"
 
@@ -42,8 +44,8 @@ typedef struct {
 
 ObjectTick_t ObjectTick;
 //PVSensor Sensor;
-//DCU dcuObject;
-Clock 	ckObject;
+TempSensor 		pTempSensor;
+//Clock 	ckObject;
 IAAP	pDcuPort;
 IAAP 	pZigbeePort;
 //ZBSTREAM pZigbeePort;
@@ -224,8 +226,8 @@ void ObjectInit(void) {
 	Relay CiCon(LPC_GPIO0, GPIO_PIN_28);
 	Relay Lamp(LPC_GPIO0, GPIO_PIN_27);*/
 
-	//dIAPCb.RegReq = IAPRegisterRequestCallback;
-	//dIAPCb.RegInd = IAPRegisterIndicatorCallback;
+	dIAPCb.RegReq = 0;
+	dIAPCb.RegInd = 0;
 	dIAPCb.ReadReq = IAPReadRequestCallback;
 	dIAPCb.ReadRsp = 0;
 	dIAPCb.WrReq = IAPWriteRequestCallBack;
@@ -243,7 +245,7 @@ void ObjectInit(void) {
 
 #ifdef USE_ZB
 	zIAPCb.RegReq = 0;
-	//zIAPCb.RegInd = IAPRegisterIndicatorCallback;
+	zIAPCb.RegInd = 0;
 	zIAPCb.ReadReq = 0;
 	zIAPCb.ReadRsp = IAPReadResponseCallback;
 	zIAPCb.WrReq = 0;
@@ -274,9 +276,11 @@ void ObjectInit(void) {
 	// Register call for DCU
 	// ADC Test
 	//Sensor.Init();
+	// Temperature initialized hardware
+	pTempSensor.Init(tTable, 101);
 	// Clock object
-	DateTime_t dt = { { 0, 42, 13 }, { 17, 3, 2014 } };
-	ckObject.Init(dt);
+	/*DateTime_t dt = { { 0, 42, 13 }, { 17, 3, 2014 } };
+	ckObject.Init(dt);*/
 
 	GPIO_SetDir(LPC_GPIO0, GPIO_PIN_10, GPIO_DIR_OUT);
 }
@@ -303,6 +307,7 @@ int main(void) {
 
 		if (ObjectTick.ms10Tick) {
 			// 10 ms routine
+			pTempSensor.Read();
 			ObjectTick.ms10Tick = FALSE;
 		}
 
@@ -324,15 +329,18 @@ int main(void) {
 				pDcuPort.RequestToSend(PRIM_REGISTER_IND, 0x00, data.Data, data.len);
 				GPIO_SetHigh(LPC_GPIO0, GPIO_PIN_10);
 			}*/
+
+			pMV.UpdateTemp(pTempSensor.GetTemp());
 			ObjectTick.ms100Tick = FALSE;
 		}
 
 		if (ObjectTick.secTick) {
 			// 1 sec routine
 			//UARTSendCh(UART0, 'U');
-			DateTime_t dt;
+			/*DateTime_t dt;
+			ckObject.UpdateClock();
 			ckObject.GetClock(&dt);
-			pMV.UpdateDatetime(&dt);
+			pMV.UpdateDatetime(&dt);*/
 			pMV.AlarmTick();
 			ObjectTick.secTick = FALSE;
 		}
@@ -392,13 +400,27 @@ void SysTick_Routine(void) {
 		}
 }
 
-void RTC_IRQHandler(void)
+/*void RTC_IRQHandler(void)
 {
 	RTC_ClearIntPendingBit();
-	//LPC_RTC->ICR = 0x01; /* Clear RTC interrupt */
+	//LPC_RTC->ICR = 0x01; /* Clear RTC interrupt /
 
 	LPC_RTC->DR;
-	LPC_RTC->MR = LPC_RTC->DR + 1;	/* Set match value */
+	LPC_RTC->MR = LPC_RTC->DR + 1;	/* Set match value /
 
 	ckObject.UpdateClock();
+}*/
+
+
+void ADC_IRQHandler (void) {
+	uint32_t reg;
+	uint16_t adcVal;
+	reg = LPC_ADC->GDR;		//Get Status
+	reg = LPC_ADC->STAT;
+	// Interrupt flag
+	if(reg & ADC_ADINT) {
+		// Channel 0
+		adcVal = ADC_GetData(ADC_CHANNEL_2);
+		TempSensor::ReadCallback(&pTempSensor, adcVal);
+	}
 }

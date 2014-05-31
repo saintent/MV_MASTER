@@ -218,6 +218,7 @@ private :
 
 protected :
 	IAP_ALARM_TYPE_T alarm;
+	IAP_ALARM_TYPE_T frmTimeout;
 	PHY_OBJECT_T 	phyObj;
 	uint8_t 		addr;
 	uint8_t 		frmBuffer[32];

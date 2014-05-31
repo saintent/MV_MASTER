@@ -43,7 +43,7 @@ PUBLIC void MV::Init(MVTimeoutCallback_t* tmCb) {
 	this->master.Serail[0] = 0x01;
 	this->master.Serail[1] = 0x00;
 	this->master.Serail[2] = 0x00;
-	this->master.Serail[3] = 0x04;
+	this->master.Serail[3] = 0x06;
 	this->alarm.Count = 0;
 	this->alarm.Enable = FALSE;
 	this->alarm.Interval = 3;
@@ -80,6 +80,10 @@ PUBLIC void MV::Init(MVTimeoutCallback_t* tmCb) {
 PUBLIC Status MV::UpdateDatetime(DateTime_t* dt) {
 	this-> dateTime = *dt;
 	return SUCCESS;
+}
+
+PUBLIC Status MV::UpdateTemp(uint8_t temp) {
+	this-> master.Temperature = temp;
 }
 /*PUBLIC Status MV::RegisterReq(uint8_t id, uint8_t type, MV_DATA_T* out) {
 	// Fine serial by id
@@ -563,7 +567,7 @@ PUBLIC Status MV::ReadNextLight(MV_DATA_T *out) {
 		currentPos = 63;
 	}
 	while (!getDev) {
-		if (++currentPos > MAX_LAMP) {
+		if (++currentPos >= MAX_LAMP) {
 			currentPos = 0;
 		}
 		pLamp = &this->lamp[currentPos];

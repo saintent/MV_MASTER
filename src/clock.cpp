@@ -68,8 +68,9 @@ void Clock::Init(DateTime_t DateTime) {
 
 	RTC_SetLoad(timeSource);
 	RTC_SetMatch(timeSource + 1);
-	RTC_IntConfig(ENABLE);
-	NVIC_EnableIRQ(RTC_IRQn);
+	//RTC_IntConfig(ENABLE);
+	//NVIC_EnableIRQ(RTC_IRQn);
+	//NVIC_SetPriority(RTC_IRQn, 30);
 	RTC_Cmd(ENABLE);
 
 }
