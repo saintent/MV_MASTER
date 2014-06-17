@@ -54,45 +54,6 @@ MV 		pMV;
 // TODO: insert other include files here
 
 // TODO: insert other definitions and declarations here
-/*void IAPRegisterRequestCallback(void* obj, uint8_t addr, uint8_t id) {
-	uint8_t dOut[64];
-	uint8_t type;
-	IAAP* iaap;
-	MV_DATA_T mvData;
-	mvData.Data = dOut;
-	iaap = (IAAP*) obj;
-	// Master
-#ifndef USE_ZB
-	if (iaap->GetPort() == UART1) {
-#else
-	if (iaap->GetPort() == UART0) {
-#endif
-		type = 0;
-	}
-	// Zigbee
-	else {
-		type = 1;
-	}
-	pMV.RegisterReq(id, type, &mvData);
-	iaap->RequestToSend(PRIM_REGISTER_RSP, addr, mvData.Data, (uint8_t) mvData.len);
-}*/
-/*void IAPRegisterIndicatorCallback(void* obj, uint8_t addr, PRIM_REG_TYPR_T* prim) {
-	uint8_t dOut[64];
-	//uint8_t type;
-	IAAP* iaap;
-	MV_DATA_T mvData;
-	mvData.Data = dOut;
-	iaap = (IAAP*) obj;
-	// Master
-	if (iaap->GetPort() == UART1) {
-		//type = 0;
-		pMV.RegisterInd(prim);
-		// Request Read
-		//pMV.RequestToReadLamp(prim->Entry, LAMP_SERIAL, &mvData);
-		//pMV.AlarmEnable();
-		//iaap->RequestToSend(PRIM_READ_REQ, addr, mvData.Data, (uint8_t) mvData.len);
-	}
-}*/
 void IAPReadRequestCallback(void* obj, uint8_t addr, PRIM_RD_TYPE_T* prim) {
 	uint8_t dOut[64];
 	//uint8_t type;

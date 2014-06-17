@@ -84,6 +84,7 @@ PUBLIC Status MV::UpdateDatetime(DateTime_t* dt) {
 
 PUBLIC Status MV::UpdateTemp(uint8_t temp) {
 	this-> master.Temperature = temp;
+	return SUCCESS;
 }
 /*PUBLIC Status MV::RegisterReq(uint8_t id, uint8_t type, MV_DATA_T* out) {
 	// Fine serial by id
@@ -514,9 +515,10 @@ PUBLIC Status MV::CollectData(MV_DATA_T* out) {
 
 		//}
 	}
-	else if (this->currentProcess == MV_COLLECT_LIGHT_PROC) {
+	else if (this->currentProcess == MV_GET_LAMP_COUNT) {
 
 	}
+
 
 	return result;
 }
@@ -563,9 +565,9 @@ PUBLIC Status MV::ReadNextLight(MV_DATA_T *out) {
 	currentPos = this->currentLampRead;
 	getDev = FALSE;
 	setPoint = 0;
-	if (currentPos == 0) {
+/*	if (currentPos == 0) {
 		currentPos = 63;
-	}
+	}*/
 	while (!getDev) {
 		if (++currentPos >= MAX_LAMP) {
 			currentPos = 0;
