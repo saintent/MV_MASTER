@@ -152,10 +152,11 @@ public:
 	Status MsRegisterPending(void);
 	Status MSRegeisterCnf(void);
 	Status CheckNewDevice(MV_DATA_T* out);
-	Status ReadNextLight(MV_DATA_T* out);
+	Status ReadNextLight(MV_DATA_T* out, LAMP_READ_TYPE_T type);
 	Status RequestToGetNewDevice(MV_DATA_T* out);
 	Status StartCollectNewDevice(void);
 	Status StartCollectLightSensor(void);
+	Status StartCollectLQI(void);
 	Status UpdateTemp(uint8_t temp);
 
 
@@ -182,7 +183,7 @@ private:
 protected:
 	MV_ALARM_TYPE_T alarm;
 	uint8_t lampCount;
-	LAMP_TYPE_T lamp[64];
+	LAMP_TYPE_T lamp[32];
 	MVTimeoutCallback_t* timeoutCallback;
 	Status lampSearch(uint8_t id, LAMP_TYPE_T** ppLamp);
 	//Status masterSearch(uint8_t id, MASTER_TYPE_T** ppMaster);

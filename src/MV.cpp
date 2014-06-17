@@ -38,7 +38,7 @@ MV::~MV() {
 PUBLIC void MV::Init(MVTimeoutCallback_t* tmCb) {
 	this->lampCount = 0;
 	//this->masterCount = 1;
-	memset((void*) &this->lamp[0].Id, 0xFF, sizeof(LAMP_TYPE_T) * 64);
+	memset((void*) &this->lamp[0].Id, 0xFF, sizeof(LAMP_TYPE_T) * 32);
 	this->master.Id = 0;
 	this->master.Serail[0] = 0x01;
 	this->master.Serail[1] = 0x00;
@@ -184,7 +184,7 @@ PUBLIC Status MV::UpdateTemp(uint8_t temp) {
 PUBLIC Status MV::ReadReq(PRIM_RD_TYPE_T* prim, MV_DATA_T* out) {
 	uint8_t i;
 	uint8_t pos;
-	uint8_t loop;
+	//uint8_t loop;
 	uint8_t lampId;
 	Status result;
 	LAMP_TYPE_T* lamp;
@@ -315,18 +315,20 @@ PUBLIC Status MV::ReadRsp(PRIM_RD_RSP_TYPE_T* prim) {
 	LAMP_TYPE_T* lamp;
 	// Find lamp id
 	//lampSearch(prim->Id, &lamp);
-	for (i = 0; i < 64; i++) {
+	/*for (i = 0; i < 64; i++) {
 		if (this->lamp[i].Id == prim->Id) {
 			lamp = &this->lamp[i];
 			break;
 		}
-	}
+	}*/
+	lamp = &this->lamp[prim->Id];
 	data = &prim->Data;
 	switch (prim->Type) {
 	case LAMP_ID:
 		// Not use now
 		break;
 	case LAMP_SERIAL:
+		lamp->Id = prim->Id;
 		memcpy(lamp->Serial, data, 12);
 		break;
 	case LAMP_SENSOR:
@@ -355,8 +357,19 @@ PUBLIC Status MV::ReadRsp(PRIM_RD_RSP_TYPE_T* prim) {
 
 		}
 		break;
+	case LAMP_NOL:
+		if (this->lampCount != prim->Data) {
+			// Clear Data of lamp and update new table
+			memset((void*) &this->lamp[0].Id, 0xFF, sizeof(LAMP_TYPE_T) * 32);
+		}
+		this->lampCount = prim->Data;
+		// Change to get Serial
+		this->currentProcess = MV_GET_DEVICE;
+		break;
 
 	}
+
+
 	// Reset State
 	AlarmDisable();
 	this->resent = 0;
@@ -364,10 +377,10 @@ PUBLIC Status MV::ReadRsp(PRIM_RD_RSP_TYPE_T* prim) {
 	return SUCCESS;
 }
 PUBLIC Status MV::WriteReq(PRIM_WR_TYPE_T* prim) {
-	Status result;
+	//Status result;
 	Date_t* date;
 	Time_t* time;
-	result = SUCCESS;
+	//result = SUCCESS;
 	if (prim->Id == 0) {
 		time = (Time_t*) &prim->Data;
 		date = (Date_t*) &time->reserve;
@@ -493,32 +506,30 @@ PUBLIC Status MV::CollectData(MV_DATA_T* out) {
 	Status result;
 	result = ERROR;
 	if (this->currentProcess == MV_GET_DEVICE) {
-		result = CheckNewDevice(out);
+		//result = CheckNewDevice(out);
+		//result = ReadNextLight(out, LAMP_SERIAL);
+		out->Data[0] = this->readCount;
+		out->Data[1] = LAMP_SERIAL;
+		out->len = 2;
+		if (++this->readCount >= this->lampCount) {
+			this->currentProcess = MV_IDLE_PROC;
+		}
 	}
 	else if (this->currentProcess == MV_COLLECT_LIGHT_PROC) {
 		//if (this->readState == MV_READ_IDLE) {
 			// Getting data from next lamp
 			// if had lamp in circuit
-			result = ReadNextLight(out);
-			/*if (this->lampCount != 0) {
-				RequestToReadLamp(this->currentLampRead, LAMP_SENSOR, out);
-				if (++this->currentLampRead >= this->lampCount) {
-					this->currentLampRead = 0;
-				}
-
-				this->readState = MV_READING;
-				AlarmEnable();
-				result = SUCCESS;
-			}*/
-			//AlarmEnable();
-
-
-		//}
+			result = ReadNextLight(out, LAMP_SENSOR);
 	}
 	else if (this->currentProcess == MV_GET_LAMP_COUNT) {
-
+		out->Data[0] = 0;
+		out->Data[1] = LAMP_NOL;
+		out->len = 3;
+		this->currentProcess = MV_IDLE_PROC;
 	}
-
+	else if (this->currentProcess == MV_COLLECT_LQI_PROC) {
+		result = ReadNextLight(out, LAMP_LQI);
+	}
 
 	return result;
 }
@@ -545,7 +556,8 @@ PUBLIC Status MV::CheckNewDevice(MV_DATA_T *out) {
 }
 
 PUBLIC Status MV::StartCollectNewDevice(void) {
-	this->currentProcess = MV_GET_DEVICE;
+	this->currentProcess = MV_GET_LAMP_COUNT;
+	this->readCount = 0;
 	return SUCCESS;
 }
 
@@ -555,7 +567,13 @@ PUBLIC Status MV::StartCollectLightSensor(void) {
 	return SUCCESS;
 }
 
-PUBLIC Status MV::ReadNextLight(MV_DATA_T *out) {
+PUBLIC Status MV::StartCollectLQI(void) {
+	this->currentProcess = MV_COLLECT_LQI_PROC;
+	this->readCount = 0;
+	return SUCCESS;
+}
+
+PUBLIC Status MV::ReadNextLight(MV_DATA_T *out, LAMP_READ_TYPE_T type) {
 	Status result;
 	uint8_t currentPos;
 	uint8_t setPoint;
@@ -590,7 +608,7 @@ PUBLIC Status MV::ReadNextLight(MV_DATA_T *out) {
 		this->currentProcess = MV_IDLE_PROC;
 	}
 	out->Data[0] = pLamp->Id;
-	out->Data[1] = LAMP_SENSOR;
+	out->Data[1] = type;
 	out->len = 2;
 
 	this->readState = MV_READING;
@@ -604,7 +622,7 @@ PRIVATE Status MV::lampSearch(uint8_t id, LAMP_TYPE_T** ppLamp) {
 	uint8_t i;
 	st = ERROR;
 	// Find lamp id
-	for (i = 0; i < 64; i++) {
+	for (i = 0; i < 32; i++) {
 		if (this->lamp[i].Id == id) {
 			*ppLamp = &this->lamp[i];
 			st = SUCCESS;

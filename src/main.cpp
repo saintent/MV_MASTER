@@ -30,7 +30,7 @@ struct {
 	uint8_t Tick10ms;
 	uint8_t Tick100ms;
 	uint8_t Tick1sec;
-	uint8_t Tick10sec;
+	uint8_t Tick15sec;
 	//uint8_t rsv;
 }TickTime;
 typedef struct {
@@ -40,6 +40,7 @@ typedef struct {
 	uint8_t secTick;
 	uint8_t sec5Tick;
 	uint8_t sec10Tick;
+	uint8_t sec15Tick;
 }ObjectTick_t;
 
 ObjectTick_t ObjectTick;
@@ -318,6 +319,11 @@ int main(void) {
 			ObjectTick.sec10Tick = FALSE;
 		}
 
+		if (ObjectTick.sec15Tick) {
+			pMV.StartCollectLQI();
+			ObjectTick.sec15Tick = FALSE;
+		}
+
 		if (pDcuPort.PendingProcess()) {
 			pDcuPort.Interactive();
 		}
@@ -342,13 +348,17 @@ void SysTick_Routine(void) {
 				if (++TickTime.Tick1sec >= 10) {
 					// 1 sec Routing
 
-					if (++TickTime.Tick10sec >= 10) {
-						ObjectTick.sec10Tick = TRUE;
-						TickTime.Tick10sec = 0;
+					if (++TickTime.Tick15sec >= 15) {
+						ObjectTick.sec15Tick = TRUE;
+						TickTime.Tick15sec = 0;
 					}
 
-					if (TickTime.Tick10sec == 5) {
+					if (TickTime.Tick15sec == 5) {
 						ObjectTick.sec5Tick = TRUE;
+					}
+
+					if (TickTime.Tick15sec == 10) {
+						ObjectTick.sec10Tick = TRUE;
 					}
 
 					ObjectTick.secTick = TRUE;
