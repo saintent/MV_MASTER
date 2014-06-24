@@ -14,7 +14,7 @@
 #include "clock.h"
 #include "relay.h"
 //================ PULBIC DEFINE ============================================//
-#define MAX_LAMP	64
+#define MAX_LAMP	32
 //================ PUBLIC MACRO =============================================//
 //
 //================ TYPEDEF DATA TYPE DEFINITION =============================//
@@ -183,7 +183,7 @@ private:
 protected:
 	MV_ALARM_TYPE_T alarm;
 	uint8_t lampCount;
-	LAMP_TYPE_T lamp[32];
+	LAMP_TYPE_T lamp[MAX_LAMP];
 	MVTimeoutCallback_t* timeoutCallback;
 	Status lampSearch(uint8_t id, LAMP_TYPE_T** ppLamp);
 	//Status masterSearch(uint8_t id, MASTER_TYPE_T** ppMaster);

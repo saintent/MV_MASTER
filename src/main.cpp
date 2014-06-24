@@ -103,16 +103,14 @@ void IAPActionRequestCallBack(void* obj, uint8_t addr, PRIM_ACT_TYPE_T* prim) {
 	}
 
 	pMV.ActionReq(prim, &mvData);
-	if (type == 0) {
-		iaap->RequestToSend(PRIM_ACTION_CNF, addr, mvData.Data,
-					(uint8_t) mvData.len);
-	}
-	else {
+	if (mvData.len != 0) {
+	//if (type == 0) {
 		pZigbeePort.RequestToSend(PRIM_ACTION_REQ, 1, mvData.Data,
-				(uint8_t) mvData.len);
+						(uint8_t) mvData.len);
 	}
-
-
+	//else {
+	iaap->RequestToSend(PRIM_ACTION_CNF, addr, 0, 0);
+	//}
 }
 void MvAlarmCallback(void) {
 	uint8_t dOut[8];

@@ -58,6 +58,7 @@ public:
 	uint16_t GetValue(SensorChannal_Typdef ch);
 private :
 	Adc_Status onRead;
+	uint8_t	test;
 	uint16_t Value[SENSOR_MAX];
 };
 

@@ -43,7 +43,7 @@ PUBLIC void MV::Init(MVTimeoutCallback_t* tmCb) {
 	this->master.Serail[0] = 0x01;
 	this->master.Serail[1] = 0x00;
 	this->master.Serail[2] = 0x00;
-	this->master.Serail[3] = 0x06;
+	this->master.Serail[3] = 0x10;
 	this->alarm.Count = 0;
 	this->alarm.Enable = FALSE;
 	this->alarm.Interval = 3;
@@ -57,6 +57,7 @@ PUBLIC void MV::Init(MVTimeoutCallback_t* tmCb) {
 	this->uility.Init(LPC_GPIO0, GPIO_PIN_27);
 	this->photoOV.Close();
 	this->ciOn.Close();
+	//this->ciOn.Open();
 
 #ifdef SIM_LAM
 	// Register Lamp
@@ -392,6 +393,7 @@ PUBLIC Status MV::WriteReq(PRIM_WR_TYPE_T* prim) {
 PUBLIC Status MV::ActionReq(PRIM_ACT_TYPE_T* prim, MV_DATA_T* out) {
 	Status result;
 	uint8_t* relayOut;
+	PRIM_ACT_TYPE_T *lprim;
 	result = ERROR;
 	out->len = 0;
 	switch (prim->Type) {
@@ -422,9 +424,10 @@ PUBLIC Status MV::ActionReq(PRIM_ACT_TYPE_T* prim, MV_DATA_T* out) {
 		}
 		break;
 	case MV_ACT_LIGHT_CONTROL :
-		out->Data[0] = prim->Id;
-		out->Data[1] = prim->Type;
-		out->Data[2] = prim->Data;
+		lprim = (PRIM_ACT_TYPE_T*) &prim->Data;
+		out->Data[0] = lprim->Id;
+		out->Data[1] = lprim->Type;
+		out->Data[2] = lprim->Data;
 		out->len = 3;
 		break;
 	default:
@@ -514,6 +517,7 @@ PUBLIC Status MV::CollectData(MV_DATA_T* out) {
 		if (++this->readCount >= this->lampCount) {
 			this->currentProcess = MV_IDLE_PROC;
 		}
+		result = SUCCESS;
 	}
 	else if (this->currentProcess == MV_COLLECT_LIGHT_PROC) {
 		//if (this->readState == MV_READ_IDLE) {
@@ -526,6 +530,7 @@ PUBLIC Status MV::CollectData(MV_DATA_T* out) {
 		out->Data[1] = LAMP_NOL;
 		out->len = 3;
 		this->currentProcess = MV_IDLE_PROC;
+		result = SUCCESS;
 	}
 	else if (this->currentProcess == MV_COLLECT_LQI_PROC) {
 		result = ReadNextLight(out, LAMP_LQI);
@@ -622,7 +627,7 @@ PRIVATE Status MV::lampSearch(uint8_t id, LAMP_TYPE_T** ppLamp) {
 	uint8_t i;
 	st = ERROR;
 	// Find lamp id
-	for (i = 0; i < 32; i++) {
+	for (i = 0; i < MAX_LAMP; i++) {
 		if (this->lamp[i].Id == id) {
 			*ppLamp = &this->lamp[i];
 			st = SUCCESS;
