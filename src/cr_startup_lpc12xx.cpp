@@ -396,6 +396,7 @@ __attribute__ ((section(".after_vectors")))
 void HardFault_Handler(void)
 {
 	//main();
+	NVIC_SystemReset();
     while(1)
     {
     }
