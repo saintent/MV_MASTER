@@ -301,6 +301,7 @@ int main(void) {
 			ckObject.UpdateClock();
 			ckObject.GetClock(&dt);
 			pMV.UpdateDatetime(&dt);*/
+			verifyCallBackFn();
 			pMV.AlarmTick();
 			ObjectTick.secTick = FALSE;
 		}

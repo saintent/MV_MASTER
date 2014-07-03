@@ -43,7 +43,7 @@ PUBLIC void MV::Init(MVTimeoutCallback_t* tmCb) {
 	this->master.Serail[0] = 0x01;
 	this->master.Serail[1] = 0x00;
 	this->master.Serail[2] = 0x00;
-	this->master.Serail[3] = 0x10;
+	this->master.Serail[3] = 0x02;
 	this->alarm.Count = 0;
 	this->alarm.Enable = FALSE;
 	this->alarm.Interval = 3;

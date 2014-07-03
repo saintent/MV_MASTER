@@ -388,6 +388,7 @@ ResetISR(void) {
 __attribute__ ((section(".after_vectors")))
 void NMI_Handler(void)
 {
+	NVIC_SystemReset();
     while(1)
     {
     }
@@ -404,6 +405,7 @@ void HardFault_Handler(void)
 __attribute__ ((section(".after_vectors")))
 void SVC_Handler(void)
 {
+	NVIC_SystemReset();
     while(1)
     {
     }
@@ -411,6 +413,7 @@ void SVC_Handler(void)
 __attribute__ ((section(".after_vectors")))
 void PendSV_Handler(void)
 {
+	NVIC_SystemReset();
     while(1)
     {
     }

@@ -205,6 +205,26 @@ Status UARTSendCh(Uart_type portNum, uint8_t ch) {
 	return st;
 }
 
+void verifyCallBackFn(void) {
+	if ((datacb[UART0] == 0) && (datacb[UART1] == 0)) {
+		NVIC_SystemReset();
+	}
+	else if ((datacb[UART0] == 0) && (datacb[UART1] != 0)) {
+		datacb[UART0] = datacb[UART1];
+	}
+	else if ((datacb[UART1] == 0) && (datacb[UART0] != 0)) {
+		datacb[UART1] = datacb[UART0];
+	}
+
+	if ((sndCmpcb[UART0] == 0) && (sndCmpcb[UART1] == 0)) {
+		NVIC_SystemReset();
+	} else if ((sndCmpcb[UART0] == 0) && (sndCmpcb[UART1] != 0)) {
+		sndCmpcb[UART0] = sndCmpcb[UART1];
+	} else if ((sndCmpcb[UART1] == 0) && (sndCmpcb[UART0] != 0)) {
+		sndCmpcb[UART1] = sndCmpcb[UART0];
+	}
+}
+
 void UART0_IRQHandler(void) {
 	uint8_t IIRValue;
 	uint8_t Dummy = Dummy;

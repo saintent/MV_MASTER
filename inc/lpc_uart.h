@@ -174,6 +174,7 @@ void UARTSetupDMA(Uart_type portNum, FunctionalState state);
 void UART_StartSent(Uart_type portNumber);
 void UART_StopSent(Uart_type portNumber);
 Status UARTSendCh(Uart_type portNum, uint8_t ch);
+void verifyCallBackFn(void);
 void UART0_IRQHandler(void);
 void UART1_IRQHandler(void);
 #ifdef __cplusplus
